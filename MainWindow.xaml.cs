@@ -84,9 +84,10 @@ namespace walkingdog
 
 
         // MultiFrame
-        Boolean bMultiFrame = false;
+        Boolean bMultiFrame = true;
 
         Mode _mode = Mode.Color;
+
         //KinectSensor _sensor;
         MultiSourceFrameReader _multiSourceFrameReader;
         IList<Body> _bodies;
@@ -145,6 +146,19 @@ namespace walkingdog
             {
                 _multiSourceFrameReader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared | FrameSourceTypes.Body);
                 _multiSourceFrameReader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
+
+                // for test
+                // get FrameDescription from DepthFrameSource
+                this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
+
+                // allocate space to put the pixels being received and converted
+                this.depthPixels = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height];
+
+                // create the bitmap to display 
+                //this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+
+                // test
+                depthPixels_bin = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height * 4];
             }
 
 
@@ -439,7 +453,6 @@ namespace walkingdog
         //        }
         //    }
 
-        //    this.outImg.Source = ImageHelpers.ToBitmapSource(openCVImg);
         //    txtBlobCount.Text = blobCount.ToString();
         //}
 
@@ -450,7 +463,6 @@ namespace walkingdog
                 return;
             }
 
-
             //Object recognition
             blobCount = 0;
             //Slicedepthimage is a Custom class
@@ -460,31 +472,79 @@ namespace walkingdog
             Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
             Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
 
+            // reduce image noise
+
+            // 1. GaussianBlur
+            // You may need to customize Size and Sigma depends on different input image.
+            //CvInvoke.GaussianBlur(srcImg, destImg, new Size(0, 0), 5);
+            var blurredImage = gray_image.SmoothGaussian(5, 5, 0, 0);
+
+            // reference
+            //Image<Gray, byte> Img_Source_Gray = Img_Org_Gray.Copy();
+            //Image<Gray, byte> Img_Egde_Gray = Img_Source_Gray.CopyBlank();
+            //Image<Gray, byte> Img_SourceSmoothed_Gray = Img_Source_Gray.CopyBlank();
+            //Image<Gray, byte> Img_Otsu_Gray = Img_Org_Gray.CopyBlank();
+            Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
+            Image<Gray, byte> Img_Dest_Gray = Img_Source_Gray.CopyBlank();
+
+            // 2. use Threshold 
+            //CvInvoke.Threshold(srcImg, destImg, 10, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
+            //CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Dest_Gray.Ptr, 240, 255, 
+            //    Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+            CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, 240, 255, Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+
+
             using (MemStorage stor = new MemStorage())
             {
                 //Find contours with no holes try CV_RETR_EXTERNAL to find holes
-                Contour<System.Drawing.Point> contours = gray_image.FindContours(
+                //Contour<System.Drawing.Point> contours = gray_image.FindContours(
+                Contour<System.Drawing.Point> contours = Img_Source_Gray.FindContours(
                                                             Emgu.CV.CvEnum.CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE,
                                                             Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_EXTERNAL,
                                                             stor);
 
+                int largestContourIndex = -1;
+                double largestArea = -1;
+                double curArea = -1;
                 for (int i = 0; contours != null; contours = contours.HNext)
                 {
                     i++;
 
-                    if ((contours.Area > Math.Pow(sliderMinSize.Value, 2)) && (contours.Area < Math.Pow(sliderMaxSize.Value, 2)))
+                    curArea = contours.Area;
+                    if ((curArea > Math.Pow(sliderMinSize.Value, 2)) && (curArea < Math.Pow(sliderMaxSize.Value, 2)))
                     //if ((contours.Area > Math.Pow(30, 2)) && (contours.Area < Math.Pow(50, 2)))
                     {
                         MCvBox2D box = contours.GetMinAreaRect();
-                        openCVImg.Draw(box, new Bgr(System.Drawing.Color.Red), 2);
+                        if (largestArea < curArea)
+                        {
+                            largestArea = curArea;
+                            largestContourIndex = i;
+                        }
+                        //blurredImage.Draw(box, new Bgr(System.Drawing.Color.Red), 2);
+                        Img_Source_Gray.Draw(box.MinAreaRect(), new Gray(128), 3);
+
                         blobCount++;
                     }
                 }
+
+                txtInfo.Text = "Contour index (" + largestContourIndex + ")"; 
             }
 
             this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
-            //this.outImg.Source = ImageHelpers.ToBitmapSource(openCVImg);
-            this.Image_1.Source = ImageHelpers.ToBitmapSource(openCVImg);
+            this.Image_1.Source = ImageHelpers.ToBitmapSource(Img_Source_Gray);
+
+            #region 침식, 팽창
+            if (true)
+            {
+                Image<Gray, byte> testImage = Img_Source_Gray.Copy();
+
+                //CvInvoke.cvDilate(Img_Source_Gray, testImage, IntPtr.Zero, 4);
+                CvInvoke.cvErode(Img_Source_Gray, testImage, IntPtr.Zero, 3); // 침식
+                CvInvoke.cvDilate(testImage, testImage, IntPtr.Zero, 3); // 팽창
+
+                this.Image_2.Source = ImageHelpers.ToBitmapSource(testImage);
+            }
+            #endregion
 
             txtBlobCount.Text = blobCount.ToString();
             //Console.WriteLine("Blob : " + blobCount);
@@ -549,12 +609,56 @@ namespace walkingdog
             // Depth
             using (var frame = reference.DepthFrameReference.AcquireFrame())
             {
+                // 15FPS control
+                if (!Utility.ControlFrameRate(15))
+                {
+                    return;
+                }
+
+                bool depthFrameProcessed = false;
+
                 if (frame != null)
                 {
                     if (_mode == Mode.Depth)
                     {
                         camera.Source = frame.ToBitmap();
+
+                        Tongull_DetectBlobs(frame);
+
+                        using (Microsoft.Kinect.KinectBuffer depthBuffer = frame.LockImageBuffer())
+                        {
+                            // verify data and write the color data to the display bitmap
+                            if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)) &&
+                                (this.depthFrameDescription.Width == this.depthBitmap.PixelWidth) && (this.depthFrameDescription.Height == this.depthBitmap.PixelHeight))
+                            {
+                                // Note: In order to see the full range of depth (including the less reliable far field depth)
+                                // we are setting maxDepth to the extreme potential depth threshold
+                                //ushort maxDepth = ushort.MaxValue;
+                                ushort maxDepth = 4000;
+                                ushort minDepth = 850;// 3000;
+
+                                // If you wish to filter by reliable depth distance, uncomment the following line:
+                                //maxDepth = depthFrame.DepthMaxReliableDistance;
+
+                                //this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, depthFrame.DepthMinReliableDistance, maxDepth);
+                                this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, minDepth, maxDepth);
+
+                                depthFrameProcessed = true;
+                            }
+                        }
+
+                        // test
+                        var depthBmp = frame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
+                        
+                        Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
+                        Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
+                        this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
                     }
+                }
+
+                if (depthFrameProcessed)
+                {
+                    this.RenderDepthPixels();
                 }
             }
 
@@ -597,6 +701,9 @@ namespace walkingdog
                     }
                 }
             }
+
+            int fps = Utility.CalculateFrameRate();
+            txtFPS.Text = fps.ToString();
         }
 
 
@@ -607,6 +714,8 @@ namespace walkingdog
 
         private void Button_Frame_Depth(object sender, RoutedEventArgs e)
         {
+            this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+
             _mode = Mode.Depth;
         }
 
@@ -653,9 +762,7 @@ namespace walkingdog
         }
 
 
-
-        // OpenGL
-
+        #region OpenGL
         private void OpenGLControl_OpenGLDraw(object sender, SharpGL.SceneGraph.OpenGLEventArgs args)
         {
             //  Get the OpenGL object.
@@ -698,7 +805,6 @@ namespace walkingdog
             gl.Vertex(-1.0f, -1.0f, 1.0f);
             gl.End();
 
-
             //  Draw the grid lines.
             gl.Begin(OpenGL.GL_LINES);
             for (int i = -10; i <= 10; i++)
@@ -715,7 +821,6 @@ namespace walkingdog
                 gl.Vertex(10, -1, i);
             }
             gl.End();
-
 
             //  Nudge the rotation.
             rotation += 3.0f;
@@ -752,10 +857,11 @@ namespace walkingdog
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
         }
 
-        /// <summary>
         /// The current rotation.
-        /// </summary>
         private float rotation = 0.0f;
+
+        #endregion
+        
     } // end of MainWindow
 
     public class Utility
