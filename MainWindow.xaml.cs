@@ -25,6 +25,8 @@ using Microsoft.Kinect;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using SharpGL;
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
 
 namespace walkingdog
 {
@@ -150,26 +152,26 @@ namespace walkingdog
                 // for test
                 // get FrameDescription from DepthFrameSource
                 this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
+                Console.WriteLine("depthFrameDescription : " + depthFrameDescription.ToString());
 
                 // allocate space to put the pixels being received and converted
                 this.depthPixels = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height];
+                Console.WriteLine("depthFrameDescription : " + depthFrameDescription.Width + ", " + depthFrameDescription.Height);
 
                 // create the bitmap to display 
-                //this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+                this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+                Console.WriteLine("depthBitmap : " + depthFrameDescription.ToString());
 
                 // test
                 depthPixels_bin = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height * 4];
+                Console.WriteLine("depthPixels_bin : " + depthFrameDescription.ToString());
             }
-
 
             // set IsAvailableChanged event notifier
             this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
 
-            
-
             // set the status text
-            this.StatusText = this.kinectSensor.IsAvailable ? Properties.Resources.RunningStatusText
-                                                            : Properties.Resources.NoSensorStatusText;
+            this.StatusText = this.kinectSensor.IsAvailable ? Properties.Resources.RunningStatusText : Properties.Resources.NoSensorStatusText;
 
             // use the window object as the view model in this simple example
             this.DataContext = this;
@@ -185,19 +187,19 @@ namespace walkingdog
 
 
         /// Gets the bitmap to display
-        public ImageSource ImageSource
-        {
-            get
-            {
-                return this.colorBitmap;
-            }
-        }
-
         public ImageSource ImageSourceDepth
         {
             get
             {
                 return this.depthBitmap;
+            }
+        }
+
+        public ImageSource ImageSource
+        {
+            get
+            {
+                return this.colorBitmap;
             }
         }
 
@@ -368,7 +370,7 @@ namespace walkingdog
                 if (depthFrame != null)
                 {
                     // test
-                    Tongull_DetectBlobs(depthFrame);
+                    //Tongull_DetectBlobs(depthFrame);
 
                     // the fastest way to process the body index data is to directly access 
                     // the underlying buffer
@@ -399,19 +401,20 @@ namespace walkingdog
                     Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
                     Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
                     this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
+
+                    //this.Image_Depth.Source = ImageHelpers.ToBitmapSource(openCVImg); ;
                 }
             }
             if (depthFrameProcessed)
             {
                 this.RenderDepthPixels();
+
                 //this.depthBitmap.WritePixels(
                 //   new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
                 //   this.depthPixels,
                 //   this.depthBitmap.PixelWidth,
                 //   0);
-
             }
-
 
             int fps = Utility.CalculateFrameRate();
             //Console.WriteLine("FPS : " + fps);
@@ -466,8 +469,10 @@ namespace walkingdog
             //Object recognition
             blobCount = 0;
             //Slicedepthimage is a Custom class
-            var depthBmp = depthFrame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
             //var depthBmp = depthFrame.SliceDepthImage(3000, 5000);
+            //var depthBmp = depthFrame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
+            var depthBmp = depthFrame.SliceDepthImageWithRect((int)sliderMin.Value, (int)sliderMax.Value, 
+                                                              (int)positionLeft.Value, (int)positionTop.Value, (int)positionRight.Value, (int)positionBottom.Value);
 
             Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
             Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
@@ -487,20 +492,29 @@ namespace walkingdog
             Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
             Image<Gray, byte> Img_Dest_Gray = Img_Source_Gray.CopyBlank();
 
+
             // 2. use Threshold 
             //CvInvoke.Threshold(srcImg, destImg, 10, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
             //CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Dest_Gray.Ptr, 240, 255, 
             //    Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
-            CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, 240, 255, Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+
+            //CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, 240, 255, Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
 
 
+            // 3. Canny 
+            //using (var cannyImage = new UMat()) ;
+            //Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
+            using (Image<Gray, Byte> cannyImage = new Image<Gray, byte>(Img_Source_Gray.Size))
             using (MemStorage stor = new MemStorage())
             {
+                CvInvoke.cvCanny(Img_Source_Gray, Img_Source_Gray, 50, 150, 3);
+
                 //Find contours with no holes try CV_RETR_EXTERNAL to find holes
                 //Contour<System.Drawing.Point> contours = gray_image.FindContours(
                 Contour<System.Drawing.Point> contours = Img_Source_Gray.FindContours(
                                                             Emgu.CV.CvEnum.CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE,
                                                             Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_EXTERNAL,
+                                                            //Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_TREE,
                                                             stor);
 
                 int largestContourIndex = -1;
@@ -530,6 +544,118 @@ namespace walkingdog
                 txtInfo.Text = "Contour index (" + largestContourIndex + ")"; 
             }
 
+            // depthFrame -> canny
+            //BitmapSource bs = (BitmapSource)depthFrame.ToBitmap();
+            //Image<Bgr, Byte> depthImageCanny = new Image<Bgr, byte>(bs.ToBitmap());
+
+            ////CvInvoke.cvCanny(depthImageCanny, depthImageCanny, 50, 150, 3);
+
+            //this.Image_Depth.Source = ImageHelpers.ToBitmapSource(depthImageCanny);
+            this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
+            this.Image_1.Source = ImageHelpers.ToBitmapSource(Img_Source_Gray);
+
+            #region 침식, 팽창
+            if (true)
+            {
+                Image<Gray, byte> testImage = Img_Source_Gray.Copy();
+
+                //CvInvoke.cvDilate(Img_Source_Gray, testImage, IntPtr.Zero, 4);
+                CvInvoke.cvErode(Img_Source_Gray, testImage, IntPtr.Zero, 3); // 침식
+                CvInvoke.cvDilate(testImage, testImage, IntPtr.Zero, 3); // 팽창
+
+                this.Image_2.Source = ImageHelpers.ToBitmapSource(testImage);
+            }
+            #endregion
+
+            txtBlobCount.Text = blobCount.ToString();
+            //Console.WriteLine("Blob : " + blobCount);
+        }
+
+        void Tongull_DetectBlobs_Infrared(InfraredFrame infFrame)
+        {
+            if (infFrame == null)
+            {
+                return;
+            }
+
+            //Object recognition
+            blobCount = 0;
+            //Slicedepthimage is a Custom class
+            BitmapSource infBmp = (BitmapSource)infFrame.ToBitmap();
+
+            Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(infBmp.ToBitmap());
+            Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
+
+            // reduce image noise
+
+            // You may need to customize Size and Sigma depends on different input image.
+            Image<Gray, byte> blurredImage;
+
+            // 1. GaussianBlur
+            //blurredImage = gray_image.SmoothGaussian(5, 5, 0, 0);
+
+            // 1-1. BilateralFilter 
+            blurredImage = gray_image.SmoothBilatral(10, 50, 50);
+
+            // reference
+            Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
+            //Image<Gray, byte> Img_Source_Gray = gray_image.Copy();
+
+            // 2. use Threshold 
+            //CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, 128, 255, Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+            CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, imageThreshMin.Value, imageThreshMax.Value, Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+
+            // 3. Canny 
+            using (Image<Gray, Byte> cannyImage = new Image<Gray, byte>(Img_Source_Gray.Size))
+            using (MemStorage stor = new MemStorage())
+            {
+                //CvInvoke.cvCanny(Img_Source_Gray, Img_Source_Gray, 50, 200, 3);
+                CvInvoke.cvCanny(Img_Source_Gray, Img_Source_Gray, cannyThreshMin.Value, cannyThreshMax.Value, 3);
+                //Console.WriteLine("Canny Threshold (" + cannyThreshMin.Value + ", " + cannyThreshMax.Value + ")");
+                
+
+                //Find contours with no holes try CV_RETR_EXTERNAL to find holes
+                //Contour<System.Drawing.Point> contours = gray_image.FindContours(
+                Contour<System.Drawing.Point> contours = Img_Source_Gray.FindContours(
+                                                            Emgu.CV.CvEnum.CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE,
+                                                            Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_EXTERNAL,
+                                                            //Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_TREE,
+                                                            stor);
+
+                int largestContourIndex = -1;
+                double largestArea = -1;
+                double curArea = -1;
+                for (int i = 0; contours != null; contours = contours.HNext)
+                {
+                    i++;
+
+                    curArea = contours.Area;
+                    if ((curArea > Math.Pow(sliderMinSize.Value, 2)) && (curArea < Math.Pow(sliderMaxSize.Value, 2)))
+                    //if ((contours.Area > Math.Pow(30, 2)) && (contours.Area < Math.Pow(50, 2)))
+                    {
+                        MCvBox2D box = contours.GetMinAreaRect();
+                        if (largestArea < curArea)
+                        {
+                            largestArea = curArea;
+                            largestContourIndex = i;
+                        }
+                        //blurredImage.Draw(box, new Bgr(System.Drawing.Color.Red), 2);
+                        Img_Source_Gray.Draw(box.MinAreaRect(), new Gray(128), 3);
+
+                        blobCount++;
+                    }
+                }
+
+                txtInfo.Text = "Contour index (" + largestContourIndex + ")";
+            }
+
+            // depthFrame -> canny
+            //BitmapSource bs = (BitmapSource)depthFrame.ToBitmap();
+            //Image<Bgr, Byte> depthImageCanny = new Image<Bgr, byte>(bs.ToBitmap());
+
+            ////CvInvoke.cvCanny(depthImageCanny, depthImageCanny, 50, 150, 3);
+
+            //this.Image_Depth.Source = ImageHelpers.ToBitmapSource(depthImageCanny);
             this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
             this.Image_1.Source = ImageHelpers.ToBitmapSource(Img_Source_Gray);
 
@@ -560,6 +686,33 @@ namespace walkingdog
                 this.depthPixels,
                 this.depthBitmap.PixelWidth,
                 0);
+
+            ////BitmapSource bs = (BitmapSource)depthFrame.ToBitmap();
+            ////Image<Bgr, Byte> depthImageCanny = new Image<Bgr, byte>(bs.ToBitmap());
+
+            //////CvInvoke.cvCanny(depthImageCanny, depthImageCanny, 50, 150, 3);
+
+            ////this.Image_Depth.Source = ImageHelpers.ToBitmapSource(depthBitmap.ToBitmap());
+
+            //System.Drawing.Bitmap bitmap = depthBitmap.ToBitmap();
+            //BitmapSource bitmapSrc = BitmapSource.Create(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96, 96, PixelFormats.Bgr32, null, this.depthPixels_bin, this.depthBitmap.PixelWidth * 4);
+            ////this.Image_Depth.Source = ImageSourceForBitmap(bitmap);
+            //this.Image_Depth.Source = bitmapSrc;
+        }
+
+        //If you get 'dllimport unknown'-, then add 'using System.Runtime.InteropServices;'
+        [DllImport("gdi32.dll", EntryPoint = "DeleteObject")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DeleteObject([In] IntPtr hObject);
+
+        public ImageSource ImageSourceForBitmap(System.Drawing.Bitmap bmp)
+        {
+            var handle = bmp.GetHbitmap();
+            try
+            {
+                return Imaging.CreateBitmapSourceFromHBitmap(handle, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally { DeleteObject(handle); }
         }
 
         /// <summary>
@@ -633,7 +786,6 @@ namespace walkingdog
                             {
                                 // Note: In order to see the full range of depth (including the less reliable far field depth)
                                 // we are setting maxDepth to the extreme potential depth threshold
-                                //ushort maxDepth = ushort.MaxValue;
                                 ushort maxDepth = 4000;
                                 ushort minDepth = 850;// 3000;
 
@@ -642,17 +794,20 @@ namespace walkingdog
 
                                 //this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, depthFrame.DepthMinReliableDistance, maxDepth);
                                 this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, minDepth, maxDepth);
+                                //this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, (ushort)sliderMinSize.Value, (ushort)sliderMaxSize.Value);
+
+                                //Tongull_DetectBlobs(frame);
 
                                 depthFrameProcessed = true;
                             }
                         }
 
-                        // test
-                        var depthBmp = frame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
+                        //// test
+                        //var depthBmp = frame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
                         
-                        Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
-                        Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
-                        this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
+                        //Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
+                        //Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
+                        //this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
                     }
                 }
 
@@ -670,6 +825,8 @@ namespace walkingdog
                     if (_mode == Mode.Infrared)
                     {
                         camera.Source = frame.ToBitmap();
+                        
+                        Tongull_DetectBlobs_Infrared(frame);
                     }
                 }
             }
@@ -714,7 +871,7 @@ namespace walkingdog
 
         private void Button_Frame_Depth(object sender, RoutedEventArgs e)
         {
-            this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+            //this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
 
             _mode = Mode.Depth;
         }

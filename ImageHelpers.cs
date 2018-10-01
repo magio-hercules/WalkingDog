@@ -65,6 +65,57 @@ namespace walkingdog
             return BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr32, null, pixels, width * 4);
         }
 
+        public static BitmapSource SliceDepthImageWithRect(this DepthFrame image, int min = 20, int max = 1000, int left = 0, int top = 0, int right = 512, int bottom = 424)
+        {
+            var tmFrameDescription = image.FrameDescription;
+
+            int width = tmFrameDescription.Width; //image.Width;
+            int height = tmFrameDescription.Height; // image.Height;
+
+            //var depthFrame = image.Image.Bits;
+            //short[] rawDepthData = new short[tmFrameDescription.LengthInPixels]; //new short[image.PixelDataLength];
+            ushort[] rawDepthData = new ushort[tmFrameDescription.LengthInPixels];
+
+            //image.CopyPixelDataTo(rawDepthData);
+            image.CopyFrameDataToArray(rawDepthData);
+
+
+            var pixels = new byte[height * width * 4];
+
+            const int BlueIndex = 0;
+            const int GreenIndex = 1;
+            const int RedIndex = 2;
+
+            int w, h = 0;
+            for (int depthIndex = 0, colorIndex = 0;
+                depthIndex < rawDepthData.Length && colorIndex < pixels.Length;
+                depthIndex++, colorIndex += 4)
+            {
+                h = depthIndex / 512;
+                w = depthIndex % 512;
+
+                if (w < left || right < w || h < top || bottom < h)
+                    continue;
+
+                // Calculate the distance represented by the two depth bytes
+                //int depth = rawDepthData[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;          
+                //int depth = rawDepthData[depthIndex] >> image.DepthMinReliableDistance;
+                int depth = rawDepthData[depthIndex];
+                // Map the distance to an intesity that can be represented in RGB
+                var intensity = CalculateIntensityFromDistance(depth);
+
+                if (depth > min && depth < max)
+                {
+                    // Apply the intensity to the color channels
+                    pixels[colorIndex + BlueIndex] = intensity; //blue
+                    pixels[colorIndex + GreenIndex] = intensity; //green
+                    pixels[colorIndex + RedIndex] = intensity; //red                    
+                }
+            }
+
+            return BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr32, null, pixels, width * 4);
+        }
+
         public static byte CalculateIntensityFromDistance(int distance)
         {
             // This will map a distance value to a 0 - 255 range
