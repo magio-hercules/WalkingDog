@@ -38,6 +38,11 @@ namespace walkingdog
         /// Active Kinect sensor
         private KinectSensor kinectSensor = null;
 
+
+        ///////////
+        // Depth //
+        ///////////
+
         /// Reader for color frames
         private ColorFrameReader colorFrameReader = null;
         private FrameDescription colorFrameDescription = null;
@@ -53,7 +58,6 @@ namespace walkingdog
         private string statusText = null;
 
 
-
         ///////////
         // Depth //
         ///////////
@@ -65,6 +69,28 @@ namespace walkingdog
         private byte[] depthPixels = null;
 
         private byte[] depthPixels_bin = null;
+
+
+        ///////////
+        // Body //
+        ///////////
+        private BodyFrameReader bodyFrameReader = null;
+
+        private Boolean _bFloorDetected = false;
+        private Body _body = null;
+        private Floor _floor = null;
+
+
+        ///////////////////////
+        // CoordinateMapping //
+        ///////////////////////
+
+        /// Coordinate mapper to map one type of point to another
+        private CoordinateMapper coordinateMapper = null;
+
+        private CameraSpacePoint[] depthMappedToCameraPoints = null;
+
+
 
         // OpenCV //
         //private IplImage _image;
@@ -104,6 +130,11 @@ namespace walkingdog
             
             // open the sensor
             this.kinectSensor.Open();
+
+            this.coordinateMapper = this.kinectSensor.CoordinateMapper;
+
+            this.depthMappedToCameraPoints = new CameraSpacePoint[512 * 424];
+
 
             if (!bMultiFrame)
             {
@@ -146,8 +177,13 @@ namespace walkingdog
             }
             else
             {
-                _multiSourceFrameReader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared | FrameSourceTypes.Body);
+                //_multiSourceFrameReader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared | FrameSourceTypes.Body);
+                _multiSourceFrameReader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared);
                 _multiSourceFrameReader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
+
+                // body
+                bodyFrameReader = this.kinectSensor.BodyFrameSource.OpenReader();
+                bodyFrameReader.FrameArrived += BodyReader_FrameArrived;
 
                 // for test
                 // get FrameDescription from DepthFrameSource
@@ -470,9 +506,19 @@ namespace walkingdog
             blobCount = 0;
             //Slicedepthimage is a Custom class
             //var depthBmp = depthFrame.SliceDepthImage(3000, 5000);
-            //var depthBmp = depthFrame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
-            var depthBmp = depthFrame.SliceDepthImageWithRect((int)sliderMin.Value, (int)sliderMax.Value, 
-                                                              (int)positionLeft.Value, (int)positionTop.Value, (int)positionRight.Value, (int)positionBottom.Value);
+            BitmapSource depthBmp;
+            if (_bFloorDetected)
+            {
+                //depthBmp = depthFrame.SliceDepthImageWithoutPlane(this._floor, this.coordinateMapper, (float)sliderPlanePos.Value, (int)sliderMin.Value, (int)sliderMax.Value);
+                depthBmp = depthFrame.SliceDepthImageWithRectWithoutPlane(_floor, this.coordinateMapper, (float)sliderPlanePos.Value, (int)sliderMin.Value, (int)sliderMax.Value, 
+                                                                  (int)positionLeft.Value, (int)positionTop.Value, (int)positionRight.Value, (int)positionBottom.Value);
+            }
+            else
+            {
+                depthBmp = depthFrame.SliceDepthImage((int)sliderMin.Value, (int)sliderMax.Value);
+            }
+            //var depthBmp = depthFrame.SliceDepthImageWithRect((int)sliderMin.Value, (int)sliderMax.Value, 
+            //                                                  (int)positionLeft.Value, (int)positionTop.Value, (int)positionRight.Value, (int)positionBottom.Value);
 
             Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
             Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
@@ -535,7 +581,7 @@ namespace walkingdog
                             largestContourIndex = i;
                         }
                         //blurredImage.Draw(box, new Bgr(System.Drawing.Color.Red), 2);
-                        Img_Source_Gray.Draw(box.MinAreaRect(), new Gray(128), 3);
+                        Img_Source_Gray.Draw(box.MinAreaRect(), new Gray(128), 2);
 
                         blobCount++;
                     }
@@ -543,6 +589,9 @@ namespace walkingdog
 
                 txtInfo.Text = "Contour index (" + largestContourIndex + ")"; 
             }
+
+            // clip rect
+            gray_image.Draw(new System.Drawing.Rectangle((int)positionLeft.Value, (int)positionTop.Value, (int)(positionRight.Value - positionLeft.Value), (int)(positionBottom.Value - positionTop.Value)), new Gray(64), 1);
 
             // depthFrame -> canny
             //BitmapSource bs = (BitmapSource)depthFrame.ToBitmap();
@@ -570,6 +619,119 @@ namespace walkingdog
             txtBlobCount.Text = blobCount.ToString();
             //Console.WriteLine("Blob : " + blobCount);
         }
+
+        void Tongull_DetectBlobs_test(DepthFrame depthFrame)
+        {
+            if (depthFrame == null)
+            {
+                return;
+            }
+
+            //Object recognition
+            blobCount = 0;
+
+            BitmapSource depthBmp = (BitmapSource)depthFrame.ToBitmap();
+
+            Image<Bgr, Byte> openCVImg = new Image<Bgr, byte>(depthBmp.ToBitmap());
+            Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
+
+            // reduce image noise
+
+            // 1. GaussianBlur
+            var blurredImage = gray_image.SmoothGaussian(3, 3, 5, 10);
+
+            // 1-1. BilateralFilter 
+            //var blurredImage = gray_image.SmoothBilatral(7, 50, 50);
+
+            // reference
+            Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
+            Image<Gray, byte> Img_Dest_Gray = Img_Source_Gray.CopyBlank();
+
+
+            // 2. use Threshold 
+            //CvInvoke.Threshold(srcImg, destImg, 10, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
+            //CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Dest_Gray.Ptr, 240, 255, 
+            //    Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+
+            CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, imageThreshMin.Value, imageThreshMax.Value, Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
+
+            // 3. Canny 
+            //using (var cannyImage = new UMat()) ;
+            //Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
+            using (Image<Gray, Byte> cannyImage = new Image<Gray, byte>(Img_Source_Gray.Size))
+            using (MemStorage stor = new MemStorage())
+            {
+                //CvInvoke.cvCanny(Img_Source_Gray, Img_Source_Gray, 50, 150, 3);
+                CvInvoke.cvCanny(Img_Source_Gray, Img_Source_Gray, cannyThreshMin.Value, cannyThreshMax.Value, 3);
+
+                //Find contours with no holes try CV_RETR_EXTERNAL to find holes
+                //Contour<System.Drawing.Point> contours = gray_image.FindContours(
+                Contour<System.Drawing.Point> contours = Img_Source_Gray.FindContours(
+                                                            Emgu.CV.CvEnum.CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_NONE,
+                                                            //Emgu.CV.CvEnum.CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE,
+                                                            //Emgu.CV.CvEnum.CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_TC89_KCOS,
+
+                                                            //Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_EXTERNAL,
+                                                            //Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_LIST,
+                                                            Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_CCOMP,
+                                                            //Emgu.CV.CvEnum.RETR_TYPE.CV_RETR_TREE,
+                                                            stor);
+
+                var contoursOrg = contours;
+
+                int largestContourIndex = -1;
+                double largestArea = -1;
+                double curArea = -1;
+                for (int i = 0; contours != null; contours = contours.HNext)
+                {
+                    i++;
+
+                    curArea = contours.Area;
+                    if ((curArea > Math.Pow(sliderMinSize.Value, 2)) && (curArea < Math.Pow(sliderMaxSize.Value, 2)))
+                    //if ((contours.Area > Math.Pow(30, 2)) && (contours.Area < Math.Pow(50, 2)))
+                    {
+                        MCvBox2D box = contours.GetMinAreaRect();
+                        if (largestArea < curArea)
+                        {
+                            largestArea = curArea;
+                            largestContourIndex = i;
+                        }
+                        //blurredImage.Draw(box, new Bgr(System.Drawing.Color.Red), 2);
+                        Img_Source_Gray.Draw(box.MinAreaRect(), new Gray(128), 3);
+
+                        blobCount++;
+                    }
+                }
+
+                txtInfo.Text = "Contour index (" + largestContourIndex + ")";
+
+                // draw Contour
+                //CvInvoke.cvDrawContours(Img_Source_Gray, contoursOrg, new MCvScalar(230), new MCvScalar(70), 2, 2, Emgu.CV.CvEnum.LINE_TYPE.CV_AA, new System.Drawing.Point(0, 0));
+            }
+
+            // clip rect
+            gray_image.Draw(new System.Drawing.Rectangle((int)positionLeft.Value, (int)positionTop.Value, (int)(positionRight.Value - positionLeft.Value), (int)(positionBottom.Value - positionTop.Value)), new Gray(64), 1);
+
+            this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
+            this.Image_1.Source = ImageHelpers.ToBitmapSource(Img_Source_Gray);
+
+            #region 침식, 팽창
+            if (true)
+            {
+                Image<Gray, byte> testImage = Img_Source_Gray.Copy();
+
+                //CvInvoke.cvDilate(Img_Source_Gray, testImage, IntPtr.Zero, 4);
+                CvInvoke.cvErode(Img_Source_Gray, testImage, IntPtr.Zero, 3); // 침식
+                CvInvoke.cvDilate(testImage, testImage, IntPtr.Zero, 3); // 팽창
+
+                this.Image_2.Source = ImageHelpers.ToBitmapSource(testImage);
+            }
+            #endregion
+
+            txtBlobCount.Text = blobCount.ToString();
+            //Console.WriteLine("Blob : " + blobCount);
+        }
+
 
         void Tongull_DetectBlobs_Infrared(InfraredFrame infFrame)
         {
@@ -763,7 +925,7 @@ namespace walkingdog
             using (var frame = reference.DepthFrameReference.AcquireFrame())
             {
                 // 15FPS control
-                if (!Utility.ControlFrameRate(15))
+                if (!Utility.ControlFrameRate(3))
                 {
                     return;
                 }
@@ -777,6 +939,8 @@ namespace walkingdog
                         camera.Source = frame.ToBitmap();
 
                         Tongull_DetectBlobs(frame);
+                        //Tongull_DetectBlobs_test(frame);
+
 
                         using (Microsoft.Kinect.KinectBuffer depthBuffer = frame.LockImageBuffer())
                         {
@@ -799,6 +963,29 @@ namespace walkingdog
                                 //Tongull_DetectBlobs(frame);
 
                                 depthFrameProcessed = true;
+
+
+                                //// remove plane
+                                //if (_bFloorDetected)
+                                //{
+                                //    this.coordinateMapper.MapDepthFrameToCameraSpaceUsingIntPtr(
+                                //                        depthBuffer.UnderlyingBuffer,
+                                //                        depthBuffer.Size,
+                                //                        this.depthMappedToCameraPoints);
+
+                                //    var length = 512 * 424;
+                                //    CameraSpacePoint s;
+                                //    double dist;
+                                //    for (int i = 0; i < length; i++)
+                                //    {
+                                //        s = this.depthMappedToCameraPoints[i];
+                                //        dist = _floor.DistanceFrom(s);
+                                //        if (dist < 0.2f)
+                                //        {
+                                //            a = 0;
+                                //        }
+                                //    }
+                                //}
                             }
                         }
 
@@ -861,6 +1048,44 @@ namespace walkingdog
 
             int fps = Utility.CalculateFrameRate();
             txtFPS.Text = fps.ToString();
+        }
+
+
+        private void BodyReader_FrameArrived(object sender, BodyFrameArrivedEventArgs e)
+        {
+            using (BodyFrame frame = e.FrameReference.AcquireFrame())
+            {
+                if (frame != null)
+                {
+                    _floor = frame.Floor();
+                    if (_floor.X != 0 && _floor.Y != 0 && _floor.Z != 0)
+                    {
+                        _bFloorDetected = true;
+                        //Console.WriteLine("Plane : (" + _floor.X + ", " + _floor.Y + ", " + _floor.Z + ")");
+                    }
+
+                    #region 참고
+                    //_floor = frame.Floor();
+                    //_body = frame.Body();
+
+                    //if (_floor != null && _body != null)
+                    //{
+                    //    CameraSpacePoint wrist3D = _body.Joints[JointType.HandLeft].Position;
+                    //    Point wrist2D = wrist3D.ToPoint();
+
+                    //    double distance = _floor.DistanceFrom(wrist3D);
+                    //    int floorY = _floor.FloorY((int)wrist2D.X, (ushort)(wrist3D.Z * 1000));
+
+                    //    TblDistance.Text = distance.ToString("N2");
+
+                    //    Canvas.SetLeft(ImgHand, wrist2D.X - ImgHand.Width / 2.0);
+                    //    Canvas.SetTop(ImgHand, wrist2D.Y - ImgHand.Height / 2.0);
+                    //    Canvas.SetLeft(ImgFloor, wrist2D.X - ImgFloor.Width / 2.0);
+                    //    Canvas.SetTop(ImgFloor, floorY - ImgFloor.Height / 2.0);
+                    //}
+                    #endregion
+                }
+            }
         }
 
 

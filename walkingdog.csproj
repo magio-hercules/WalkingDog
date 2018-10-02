@@ -116,6 +116,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Extensions.cs" />
+    <Compile Include="Floor.cs" />
     <Compile Include="ImageHelpers.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

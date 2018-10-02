@@ -98,13 +98,13 @@
                     <StackPanel Orientation="Vertical" Margin="20,0,0,0"   >
                         <TextBlock Text="Min Blob Size" Padding="5"/>
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="10" Maximum="50" Margin="5" x:Name="sliderMinSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                            <Slider Width="200" Minimum="1" Value="40" Maximum="70" Margin="5" x:Name="sliderMinSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=sliderMinSize}" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <TextBlock Text="Max Blob Size" Padding="5"/>
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="110" Maximum="500" Margin="5" x:Name="sliderMaxSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                            <Slider Width="200" Minimum="40" Value="240" Maximum="500" Margin="5" x:Name="sliderMaxSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=sliderMaxSize}" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
@@ -113,7 +113,7 @@
                     <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
                         <TextBlock Text="Image Threshold Min" Padding="5"/>
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="120" Maximum="255" Margin="5" x:Name="imageThreshMin"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                            <Slider Width="200" Minimum="1" Value="60" Maximum="255" Margin="5" x:Name="imageThreshMin"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=imageThreshMin}" VerticalAlignment="Center" />
                         </StackPanel>
 
@@ -191,6 +191,15 @@
                     <StackPanel Margin="15 15 15 15" Orientation="Horizontal" >
                         <Button Width="70" Height="25" Click="Button_Depth_Enable">Enable</Button>
                         <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Depth_Disable">Disble</Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                    <TextBlock Text="Plane Position" Padding="5" Background="#ccc"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Slider Width="400" Minimum="-0.5" Value="-0.29" Maximum="0.2" Margin="5" x:Name="sliderPlanePos" 
+                                TickFrequency="0.01" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                        <TextBlock Text="{Binding Value, ElementName=sliderPlanePos}" VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
