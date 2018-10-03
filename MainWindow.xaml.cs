@@ -21,6 +21,8 @@ using System.Globalization;
 using System.IO;
 // end of add
 
+//using static System.Drawing.Bitmap;
+
 using Microsoft.Kinect;
 using Emgu.CV;
 using Emgu.CV.Structure;
@@ -393,7 +395,7 @@ namespace walkingdog
         /// <param name="e">event arguments</param>
         private void Reader_FrameArrived(object sender, DepthFrameArrivedEventArgs e)
         {
-            if (!Utility.ControlFrameRate(15))
+            if (!Utility.ControlFrameRate((int)this.sliderFPS.Value))
             {
                 return;
             }
@@ -524,6 +526,8 @@ namespace walkingdog
             Image<Gray, byte> gray_image = openCVImg.Convert<Gray, byte>();
 
             // reduce image noise
+            CvInvoke.cvDilate(gray_image, gray_image, IntPtr.Zero, 2); // 팽창
+            CvInvoke.cvErode(gray_image, gray_image, IntPtr.Zero, 2); // 침식
 
             // 1. GaussianBlur
             // You may need to customize Size and Sigma depends on different input image.
@@ -534,9 +538,9 @@ namespace walkingdog
             //Image<Gray, byte> Img_Source_Gray = Img_Org_Gray.Copy();
             //Image<Gray, byte> Img_Egde_Gray = Img_Source_Gray.CopyBlank();
             //Image<Gray, byte> Img_SourceSmoothed_Gray = Img_Source_Gray.CopyBlank();
-            //Image<Gray, byte> Img_Otsu_Gray = Img_Org_Gray.CopyBlank();
+            //Image<Gray, byte> Img_Otsu_Gray = Img_Org_Gray.CopyBlank();`
             Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
-            Image<Gray, byte> Img_Dest_Gray = Img_Source_Gray.CopyBlank();
+            //Image<Gray, byte> Img_Dest_Gray = Img_Source_Gray.CopyBlank();
 
 
             // 2. use Threshold 
@@ -590,6 +594,17 @@ namespace walkingdog
                 txtInfo.Text = "Contour index (" + largestContourIndex + ")"; 
             }
 
+            #region Skeletonize
+            if (true)
+            {
+                Image<Gray, byte> testImage = gray_image.Copy();
+
+                Image<Gray, byte> skelImage = Skeletonize(testImage);
+
+                this.Image_2.Source = ImageHelpers.ToBitmapSource(skelImage);
+            }
+            #endregion
+
             // clip rect
             gray_image.Draw(new System.Drawing.Rectangle((int)positionLeft.Value, (int)positionTop.Value, (int)(positionRight.Value - positionLeft.Value), (int)(positionBottom.Value - positionTop.Value)), new Gray(64), 1);
 
@@ -603,8 +618,8 @@ namespace walkingdog
             this.Image_Source.Source = ImageHelpers.ToBitmapSource(gray_image);
             this.Image_1.Source = ImageHelpers.ToBitmapSource(Img_Source_Gray);
 
-            #region 침식, 팽창
-            if (true)
+            #region 침식, 팽창 ref
+            if (false)
             {
                 Image<Gray, byte> testImage = Img_Source_Gray.Copy();
 
@@ -645,14 +660,10 @@ namespace walkingdog
 
             // reference
             Image<Gray, byte> Img_Source_Gray = blurredImage.Copy();
-            Image<Gray, byte> Img_Dest_Gray = Img_Source_Gray.CopyBlank();
 
 
             // 2. use Threshold 
             //CvInvoke.Threshold(srcImg, destImg, 10, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
-            //CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Dest_Gray.Ptr, 240, 255, 
-            //    Emgu.CV.CvEnum.THRESH.CV_THRESH_OTSU | Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
-
             CvInvoke.cvThreshold(Img_Source_Gray.Ptr, Img_Source_Gray.Ptr, imageThreshMin.Value, imageThreshMax.Value, Emgu.CV.CvEnum.THRESH.CV_THRESH_BINARY);
 
             // 3. Canny 
@@ -925,7 +936,7 @@ namespace walkingdog
             using (var frame = reference.DepthFrameReference.AcquireFrame())
             {
                 // 15FPS control
-                if (!Utility.ControlFrameRate(3))
+                if (!Utility.ControlFrameRate((int)this.sliderFPS.Value))
                 {
                     return;
                 }
@@ -1143,6 +1154,104 @@ namespace walkingdog
             }
         }
 
+        // org
+        //public static Bitmap Skelatanize(Bitmap image)
+        //{
+        //    Image<Gray, byte> imgOld = new Image<Gray, byte>(image);
+        //    Image<Gray, byte> img2 = (new Image<Gray, byte>(imgOld.Width, imgOld.Height, new Gray(255))).Sub(imgOld);
+        //    Image<Gray, byte> eroded = new Image<Gray, byte>(img2.Size);
+        //    Image<Gray, byte> temp = new Image<Gray, byte>(img2.Size);
+        //    Image<Gray, byte> skel = new Image<Gray, byte>(img2.Size);
+        //    skel.SetValue(0);
+        //    CvInvoke.Threshold(img2, img2, 127, 256, 0);
+        //    var element = CvInvoke.GetStructuringElement(ElementShape.Cross, new Size(3, 3), new Point(-1, -1));
+        //    bool done = false;
+
+        //    while (!done)
+        //    {
+        //        CvInvoke.Erode(img2, eroded, element, new Point(-1, -1), 1, BorderType.Reflect, default(MCvScalar));
+        //        CvInvoke.Dilate(eroded, temp, element, new Point(-1, -1), 1, BorderType.Reflect, default(MCvScalar));
+        //        CvInvoke.Subtract(img2, temp, temp);
+        //        CvInvoke.BitwiseOr(skel, temp, skel);
+        //        eroded.CopyTo(img2);
+        //        if (CvInvoke.CountNonZero(img2) == 0) done = true;
+        //    }
+        //    return skel.Bitmap;
+        //}
+
+        public static System.Drawing.Bitmap Skeletonize(System.Drawing.Bitmap image)
+        {
+            Image<Gray, byte> imgOld = new Image<Gray, byte>(image);
+            Image<Gray, byte> img2 = (new Image<Gray, byte>(imgOld.Width, imgOld.Height, new Gray(255))).Sub(imgOld);
+            Image<Gray, byte> eroded = new Image<Gray, byte>(img2.Size);
+            Image<Gray, byte> temp = new Image<Gray, byte>(img2.Size);
+            Image<Gray, byte> skel = new Image<Gray, byte>(img2.Size);
+            skel.SetValue(0);
+            CvInvoke.cvThreshold(img2, img2, 127, 256, 0);
+            //var element = CvInvoke.GetStructuringElement(ElementShape.Cross, new Size(3, 3), new Point(-1, -1));
+            bool done = false;
+
+            Console.WriteLine("Skeletonize Start !!!!!!!!!!!!!!!");
+            int i = 0;
+            while (!done)
+            {
+                CvInvoke.cvErode(img2, eroded, IntPtr.Zero, 1);
+                CvInvoke.cvDilate(eroded, temp, IntPtr.Zero, 1);
+                CvInvoke.cvSub(img2, temp, temp, IntPtr.Zero);
+                CvInvoke.cvOr(skel, temp, skel, IntPtr.Zero);
+                eroded.CopyTo(img2);
+                if (CvInvoke.cvCountNonZero(img2) == 0) done = true;
+                Console.WriteLine("Skeletonize " + i++);
+            }
+            Console.WriteLine("Skeletonize Start !!!!!!!!!!!!!!!");
+            return skel.Bitmap;
+        }
+
+        public static Image<Gray, byte> Skeletonize(Image<Gray, byte> image)
+        {
+            StructuringElementEx element = new StructuringElementEx(3, 3, 1, 1, Emgu.CV.CvEnum.CV_ELEMENT_SHAPE.CV_SHAPE_CROSS);
+
+            //CvInvoke.cvDilate(image, image, element, 1);
+
+            //Image<Gray, byte> imgOld = image;
+            //Image<Gray, byte> img2 = (new Image<Gray, byte>(imgOld.Width, imgOld.Height, new Gray(255))).Sub(imgOld);
+            Image<Gray, byte> img2 = image;
+
+            Image<Gray, byte> eroded = new Image<Gray, byte>(img2.Size);
+            Image<Gray, byte> temp = new Image<Gray, byte>(img2.Size);
+            Image<Gray, byte> skel = new Image<Gray, byte>(img2.Size);
+            skel.SetValue(0);
+            CvInvoke.cvThreshold(img2, img2, 127, 256, 0);
+
+            bool done = false;
+
+            Console.WriteLine("Skeletonize Start !!!!!!!!!!!!!!!");
+            int i = 0;
+            while (!done)
+            {
+                if (true)
+                {
+                    CvInvoke.cvErode(img2, eroded, element, 1);
+                    CvInvoke.cvDilate(eroded, temp, element, 1);
+                    CvInvoke.cvSub(img2, temp, temp, IntPtr.Zero);
+                    CvInvoke.cvOr(skel, temp, skel, IntPtr.Zero);
+                    eroded.CopyTo(img2);
+                } else
+                {
+                    CvInvoke.cvErode(img2, eroded, element, 1);
+                    CvInvoke.cvDilate(eroded, temp, element, 1);
+                    temp = img2.Sub(temp);
+                    skel = skel | temp;
+                    img2 = eroded;
+                }
+
+                if (CvInvoke.cvCountNonZero(img2) == 0) done = true;
+                Console.WriteLine("Skeletonize " + i++);
+            }
+            Console.WriteLine("Skeletonize End !!!!!!!!!!!!!!!");
+            return skel;
+        }
+        
 
         #region OpenGL
         private void OpenGLControl_OpenGLDraw(object sender, SharpGL.SceneGraph.OpenGLEventArgs args)

@@ -43,41 +43,68 @@
 
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0" Width="480" Height="424" 
                     Background="#f0f0f0" Orientation="Vertical" HorizontalAlignment="Left">
-            <TextBlock Text="Settings"  Padding="5" Background="#ccc" />
-            <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
+            <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                <TextBlock Text="FPS" Padding="5" Background="#ccc"/>
+                <StackPanel Orientation="Horizontal">
+                    <Slider Width="430" Minimum="1" Value="10" Maximum="30" Margin="5" x:Name="sliderFPS" 
+                                TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
+                    <TextBlock Text="{Binding Value, ElementName=sliderFPS}" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                <TextBlock Text="Screen Clipping" Padding="5" Background="#ccc"/>
+                <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
                         <TextBlock Text="Left" Padding="5"/>
                         <StackPanel  Orientation="Horizontal" >
-                            <Slider Width="50"  Minimum="0" Value="120"  Maximum="512" Margin="5"  
+                            <Slider Width="150"  Minimum="0" Value="120"  Maximum="512" Margin="15 5 5 5"  
                                     TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
                                     x:Name="positionLeft" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=positionLeft}" VerticalAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Text="Top" Padding="5"/>
+                        <TextBlock Text="Top" Padding="10 5 5 5"/>
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="50" Minimum="0" Value="190" Maximum="512" Margin="5" 
+                            <Slider Width="160" Minimum="0" Value="190" Maximum="512" Margin="23 5 5 5" 
                                     TickFrequency="1" IsSnapToTickEnabled="True" Interval="1"
                                     x:Name="positionTop" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=positionTop}" VerticalAlignment="Center" />
                         </StackPanel>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
                         <TextBlock Text="Right" Padding="5"/>
                         <StackPanel  Orientation="Horizontal" >
-                            <Slider Width="50"  Minimum="0" Value="400"  Maximum="512" Margin="5"  
+                            <Slider Width="150"  Minimum="0" Value="400"  Maximum="512" Margin="5"  
                                     TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
                                     x:Name="positionRight" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=positionRight}" VerticalAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Text="Bottom" Padding="5"/>
+                        <TextBlock Text="Bottom" Padding="10 5 5 5"/>
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="50" Minimum="0" Value="390" Maximum="424" Margin="5" 
+                            <Slider Width="160" Minimum="0" Value="390" Maximum="424" Margin="5" 
                                     TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
                                     x:Name="positionBottom" Padding="5"/>
                             <TextBlock Text="{Binding Value, ElementName=positionBottom}" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
-                
+            </StackPanel>
+            
+            
+            <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                <TextBlock Text="Plane Position" Padding="5" Background="#ccc"/>
+                <StackPanel Orientation="Horizontal">
+                    <Slider Width="430" Minimum="-0.5" Value="-0.29" Maximum="0.2" Margin="5" x:Name="sliderPlanePos" 
+                                TickFrequency="0.01" IsSnapToTickEnabled="True" Interval="1" />
+                    <TextBlock Text="{Binding Value, ElementName=sliderPlanePos}" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock Text="Settings"  Padding="5" Background="#ccc" />
+
+            <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
+
+
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
                     <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
                         <TextBlock Text="Min Distance" Padding="5"/>
@@ -123,7 +150,7 @@
                             <TextBlock Text="{Binding Value, ElementName=imageThreshMax}" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
-                    
+
                     <StackPanel Orientation="Vertical" Margin="20,0,0,0"   >
                         <TextBlock Text="Canny Threshold Min" Padding="5"/>
                         <StackPanel Orientation="Horizontal">
@@ -138,29 +165,15 @@
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
-                
-            </StackPanel>
 
-            
-
-            <TextBlock Background="#ccc" Text="Info" Margin="0,0,0,0" Padding="5"/>
-            <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
-                <TextBlock Text="Blobs Detected" Margin="10 0 0 0" />
-                <TextBlock TextWrapping="Wrap" x:Name="txtBlobCount" Text="0" Margin="10 0 0 0" />
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
-                <TextBlock Text="FPS" Margin="10 0 0 0" />
-                <TextBlock TextWrapping="Wrap" x:Name="txtFPS" Text="0" Margin="74 0 0 0" />
-            </StackPanel>
-            <TextBlock TextWrapping="Wrap" x:Name="txtInfo" Text="Info" Padding="10"/>
-
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0" Width="480" Height="424" 
                     Background="#f0f0f0" Orientation="Vertical" HorizontalAlignment="Left">
             <StackPanel Margin="0" Orientation="Vertical" >
                 <StackPanel Orientation="Vertical" >
-                    <TextBlock Text="Frame" Padding="5" Background="#ccc" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock Text="Frame" Padding="5" Background="#ccc" >
                         <TextBlock.RenderTransform>
                             <TransformGroup>
                                 <ScaleTransform/>
@@ -193,16 +206,20 @@
                         <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Depth_Disable">Disble</Button>
                     </StackPanel>
                 </StackPanel>
-
-                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                    <TextBlock Text="Plane Position" Padding="5" Background="#ccc"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Slider Width="400" Minimum="-0.5" Value="-0.29" Maximum="0.2" Margin="5" x:Name="sliderPlanePos" 
-                                TickFrequency="0.01" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                        <TextBlock Text="{Binding Value, ElementName=sliderPlanePos}" VerticalAlignment="Center" />
-                    </StackPanel>
-                </StackPanel>
             </StackPanel>
+            
+            <TextBlock Background="#ccc" Text="Info" Margin="0,0,0,0" Padding="5"/>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="Blobs Detected" />
+                <TextBlock TextWrapping="Wrap" x:Name="txtBlobCount" Text="0" Margin="10 0 0 0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="FPS" />
+                <TextBlock TextWrapping="Wrap" x:Name="txtFPS" Text="0" Margin="74 0 0 0" />
+            </StackPanel>
+
+            <TextBlock TextWrapping="Wrap" x:Name="txtInfo" Text="Info" Margin="5"/>
+
         </StackPanel>
 
         <Viewbox Grid.Row="1" Grid.Column="3" Height="424" Width="480" HorizontalAlignment="Right">
