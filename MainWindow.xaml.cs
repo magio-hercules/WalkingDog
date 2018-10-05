@@ -109,6 +109,12 @@ namespace walkingdog
 
 
 
+        // 3D Skeleton
+        int skeletonCount = 0;
+        CameraSpacePoint[] skeletonPosition;
+        float minX = 100, minY = 100, minZ = 100, maxX = -100, maxY = -100, maxZ = -100;
+        CameraSpacePoint lookPos = new CameraSpacePoint();
+
         // openGL
         //private SharpGL.SceneControl sceneControl1;
 
@@ -213,6 +219,11 @@ namespace walkingdog
 
             // use the window object as the view model in this simple example
             this.DataContext = this;
+
+            this.skeletonPosition = new CameraSpacePoint[1000];
+            lookPos.X = 0.1537764f;
+            lookPos.Y = -1.759739f;
+            lookPos.Z = 7.670001f;
 
             InitializeComponent();
         }
@@ -598,10 +609,81 @@ namespace walkingdog
             if (true)
             {
                 Image<Gray, byte> testImage = gray_image.Copy();
-
                 Image<Gray, byte> skelImage = Skeletonize(testImage);
 
+                //Console.WriteLine("skelImage size : " + skelImage.Size);
                 this.Image_2.Source = ImageHelpers.ToBitmapSource(skelImage);
+
+                //// 3D skeleton
+                ushort[] _depthData = new ushort[512 * 424];
+                depthFrame.CopyFrameDataToArray(_depthData);
+                CameraSpacePoint[] depthMappedToCameraPoints = new CameraSpacePoint[512 * 424];
+                coordinateMapper.MapDepthFrameToCameraSpace(_depthData, depthMappedToCameraPoints);
+
+                byte data;
+                byte l,t,r,b;
+                byte h,i, j, k;
+                int count = 0;
+
+                CameraSpacePoint curPos;
+
+                var valH = skelImage.Height;
+                var valW = skelImage.Width;
+                for (int y = 0; y < valH; y++)
+                {
+                    for (int x = 0; x < valW; x++)
+                    {
+                        data = skelImage.Data[y, x, 0];
+                        l = skelImage.Data[y, x > 1 && x < valW ? x - 1 : x, 0];
+                        t = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x, 0];
+                        r = skelImage.Data[y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+                        b = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x, 0];
+
+                        h = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
+                        i = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+                        j = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
+                        k = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+
+                        var a = 0;
+                        if (data != 0)
+                        {
+                            a = 1;
+                            a += 3;
+                        }
+
+                        if (data != 0 && (l | t | r | b /*|h|i|j|k*/) != 0)
+                        {
+                            curPos = (CameraSpacePoint)depthMappedToCameraPoints.GetValue(y * valW + x);
+                            skeletonPosition[count].X = curPos.X * 10;
+                            skeletonPosition[count].Y = curPos.Y * 10;
+                            skeletonPosition[count].Z = curPos.Z * 10;
+
+                            if (!float.IsInfinity(curPos.X)) {
+                                if (this.skeletonPosition[count].X < minX) minX = skeletonPosition[count].X;
+                                if (this.skeletonPosition[count].X > maxX) maxX = skeletonPosition[count].X;
+                            }
+                            if (!float.IsInfinity(curPos.Y)) {
+                                if (this.skeletonPosition[count].Y < minY) minY = skeletonPosition[count].Y;
+                                if (this.skeletonPosition[count].Y > maxY) maxY = skeletonPosition[count].Y;
+                            }
+                            if (!float.IsInfinity(curPos.Z)) {
+                                if (this.skeletonPosition[count].Z < minZ) minZ = skeletonPosition[count].Z;
+                                if (this.skeletonPosition[count].Z > maxZ) maxZ = skeletonPosition[count].Z;
+                            }
+                            count++;
+                        }
+                    }
+                }
+
+                // set lookPos
+                //if (skeletonCount == 0)
+                //{
+                //    lookPos.X = (minX + maxX) / 2;
+                //    lookPos.Y = (minY + maxY) / 2;
+                //    lookPos.Z = (minZ + maxZ) / 2;
+                //}
+
+                skeletonCount = count;
             }
             #endregion
 
@@ -974,29 +1056,6 @@ namespace walkingdog
                                 //Tongull_DetectBlobs(frame);
 
                                 depthFrameProcessed = true;
-
-
-                                //// remove plane
-                                //if (_bFloorDetected)
-                                //{
-                                //    this.coordinateMapper.MapDepthFrameToCameraSpaceUsingIntPtr(
-                                //                        depthBuffer.UnderlyingBuffer,
-                                //                        depthBuffer.Size,
-                                //                        this.depthMappedToCameraPoints);
-
-                                //    var length = 512 * 424;
-                                //    CameraSpacePoint s;
-                                //    double dist;
-                                //    for (int i = 0; i < length; i++)
-                                //    {
-                                //        s = this.depthMappedToCameraPoints[i];
-                                //        dist = _floor.DistanceFrom(s);
-                                //        if (dist < 0.2f)
-                                //        {
-                                //            a = 0;
-                                //        }
-                                //    }
-                                //}
                             }
                         }
 
@@ -1225,7 +1284,7 @@ namespace walkingdog
 
             bool done = false;
 
-            Console.WriteLine("Skeletonize Start !!!!!!!!!!!!!!!");
+            //Console.WriteLine("Skeletonize Start !!!!!!!!!!!!!!!");
             int i = 0;
             while (!done)
             {
@@ -1246,12 +1305,12 @@ namespace walkingdog
                 }
 
                 if (CvInvoke.cvCountNonZero(img2) == 0) done = true;
-                Console.WriteLine("Skeletonize " + i++);
+                //Console.WriteLine("Skeletonize " + i++);
             }
-            Console.WriteLine("Skeletonize End !!!!!!!!!!!!!!!");
+            //Console.WriteLine("Skeletonize End !!!!!!!!!!!!!!!");
             return skel;
         }
-        
+
 
         #region OpenGL
         private void OpenGLControl_OpenGLDraw(object sender, SharpGL.SceneGraph.OpenGLEventArgs args)
@@ -1259,71 +1318,116 @@ namespace walkingdog
             //  Get the OpenGL object.
             OpenGL gl = openGLControl.OpenGL;
 
-            //  Clear the color and depth buffer.
+            // Clear The Screen And The Depth Buffer
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
-
-            //  Load the identity matrix.
+            // Reset The Current Modelview Matrix
             gl.LoadIdentity();
 
             //  Rotate around the Y axis.
-            gl.Rotate(rotation, 0.0f, 1.0f, 0.0f);
+            //gl.Rotate(rotation, 0.0f, 1.0f, 0.0f);
+
+            //gl.PushMatrix();
+            ////gl.Translate(lookPos.X, lookPos.Y, lookPos.Z);
+            //gl.Rotate(rotation, 0.0f, 1.0f, 0.0f);
+            ////gl.Translate(1.0f, 0.0f, 0.0f);
+            //gl.PopMatrix();
 
             //  Draw a coloured pyramid.
-            gl.Begin(OpenGL.GL_TRIANGLES);
-            gl.Color(1.0f, 0.0f, 0.0f);
-            gl.Vertex(0.0f, 1.0f, 0.0f);
-            gl.Color(0.0f, 1.0f, 0.0f);
-            gl.Vertex(-1.0f, -1.0f, 1.0f);
-            gl.Color(0.0f, 0.0f, 1.0f);
-            gl.Vertex(1.0f, -1.0f, 1.0f);
-            gl.Color(1.0f, 0.0f, 0.0f);
-            gl.Vertex(0.0f, 1.0f, 0.0f);
-            gl.Color(0.0f, 0.0f, 1.0f);
-            gl.Vertex(1.0f, -1.0f, 1.0f);
-            gl.Color(0.0f, 1.0f, 0.0f);
-            gl.Vertex(1.0f, -1.0f, -1.0f);
-            gl.Color(1.0f, 0.0f, 0.0f);
-            gl.Vertex(0.0f, 1.0f, 0.0f);
-            gl.Color(0.0f, 1.0f, 0.0f);
-            gl.Vertex(1.0f, -1.0f, -1.0f);
-            gl.Color(0.0f, 0.0f, 1.0f);
-            gl.Vertex(-1.0f, -1.0f, -1.0f);
-            gl.Color(1.0f, 0.0f, 0.0f);
-            gl.Vertex(0.0f, 1.0f, 0.0f);
-            gl.Color(0.0f, 0.0f, 1.0f);
-            gl.Vertex(-1.0f, -1.0f, -1.0f);
-            gl.Color(0.0f, 1.0f, 0.0f);
-            gl.Vertex(-1.0f, -1.0f, 1.0f);
-            gl.End();
-
-            //  Draw the grid lines.
-            gl.Begin(OpenGL.GL_LINES);
-            for (int i = -10; i <= 10; i++)
+            if (false)
             {
-                float fcol = ((i % 10) == 0) ? 0.3f : 0.15f;
-                gl.Color(fcol, fcol, fcol);
-                //gl.Vertex(i, -10, 0);
-                //gl.Vertex(i, 10, 0);
-                //gl.Vertex(-10, i, 0);
-                //gl.Vertex(10, i, 0);
-                gl.Vertex(i, -1, -10);
-                gl.Vertex(i, -1, 10);
-                gl.Vertex(-10, -1, i);
-                gl.Vertex(10, -1, i);
+                gl.Begin(OpenGL.GL_TRIANGLES);
+                gl.Color(1.0f, 0.0f, 0.0f);
+                gl.Vertex(0.0f, 1.0f, 0.0f);
+                gl.Color(0.0f, 1.0f, 0.0f);
+                gl.Vertex(-1.0f, -1.0f, 1.0f);
+                gl.Color(0.0f, 0.0f, 1.0f);
+                gl.Vertex(1.0f, -1.0f, 1.0f);
+                gl.Color(1.0f, 0.0f, 0.0f);
+                gl.Vertex(0.0f, 1.0f, 0.0f);
+                gl.Color(0.0f, 0.0f, 1.0f);
+                gl.Vertex(1.0f, -1.0f, 1.0f);
+                gl.Color(0.0f, 1.0f, 0.0f);
+                gl.Vertex(1.0f, -1.0f, -1.0f);
+                gl.Color(1.0f, 0.0f, 0.0f);
+                gl.Vertex(0.0f, 1.0f, 0.0f);
+                gl.Color(0.0f, 1.0f, 0.0f);
+                gl.Vertex(1.0f, -1.0f, -1.0f);
+                gl.Color(0.0f, 0.0f, 1.0f);
+                gl.Vertex(-1.0f, -1.0f, -1.0f);
+                gl.Color(1.0f, 0.0f, 0.0f);
+                gl.Vertex(0.0f, 1.0f, 0.0f);
+                gl.Color(0.0f, 0.0f, 1.0f);
+                gl.Vertex(-1.0f, -1.0f, -1.0f);
+                gl.Color(0.0f, 1.0f, 0.0f);
+                gl.Vertex(-1.0f, -1.0f, 1.0f);
+                gl.End();
+            }
+
+            
+
+            gl.PushMatrix();
+
+            gl.Translate(lookPos.X, lookPos.Y, lookPos.Z);
+            gl.Rotate(rotation, 0.0f, 1.0f, 0.0f);
+            gl.Translate(-lookPos.X, -lookPos.Y, -lookPos.Z);
+            //gl.Translate(1.0f, 0.0f, 0.0f);
+
+            // drawskeleton
+            gl.PointSize(3.0f);
+            gl.Begin(OpenGL.GL_POINTS);
+            for (int i = 0; i <= skeletonCount; i++)
+            {
+                gl.Color(1.0f, 1.0f, 1.0f);
+                gl.Vertex(skeletonPosition[i].X, skeletonPosition[i].Y, skeletonPosition[i].Z);
             }
             gl.End();
 
-            //  Nudge the rotation.
-            rotation += 3.0f;
+            //  Draw the grid lines.
+            if (true)
+            {
+                gl.Begin(OpenGL.GL_LINES);
+                for (int i = -30; i <= 30; i++)
+                {
+                    float fcol = ((i % 10) == 0) ? 0.3f : 0.15f;
+                    gl.Color(fcol, fcol, fcol);
+
+                    gl.Vertex(i, -5, -30);
+                    gl.Vertex(i, -5, 30);
+                    gl.Vertex(-30, -5, i);
+                    gl.Vertex(30, -5, i);
+                }
+                gl.End();
+            }
+
+            gl.PopMatrix();
+
+            rotation += 1.5f;
+            if (rotation > 360.0f)
+                rotation -= 360.0f;
+
+            //  Flush OpenGL.
+            gl.Flush();
         }
 
         private void OpenGLControl_OpenGLInitialized(object sender, SharpGL.SceneGraph.OpenGLEventArgs args)
         {
             //  Get the OpenGL object.
             OpenGL gl = openGLControl.OpenGL;
-
+            
             //  Set the clear color.
             gl.ClearColor(0, 0, 0, 0);
+
+            //// Enables Smooth Shading 
+            //gl.ShadeModel(OpenGL.GL_SMOOTH);
+            //// Depth Buffer Setup 
+            //gl.ClearDepth(1.0f);
+            //// Enables Depth Testing 
+            //gl.Enable(OpenGL.GL_DEPTH_TEST);
+            //// The Type Of Depth Test To Do 
+            //gl.DepthFunc(OpenGL.GL_LEQUAL);
+
+            //// Really Nice Perspective    Calculations 
+            //gl.Hint(OpenGL.GL_PERSPECTIVE_CORRECTION_HINT, OpenGL.GL_NICEST);
         }
 
         private void OpenGLControl_Resized(object sender, SharpGL.SceneGraph.OpenGLEventArgs args)
@@ -1333,19 +1437,25 @@ namespace walkingdog
 
             //  Set the projection matrix.
             gl.MatrixMode(OpenGL.GL_PROJECTION);
-
             //  Load the identity.
             gl.LoadIdentity();
 
             //  Create a perspective transformation.
-            gl.Perspective(45.0f, (double)Width / (double)Height, 0.01, 100.0);
+            gl.Perspective(45.0f, (double)Width / (double)Height, 0.01, 200.0);
 
             //  Use the 'look at' helper function to position and aim the camera.
-            //gl.LookAt(-5, 5, -5, 0, 0, 0, 0, 1, 0);
-            gl.LookAt(-5, 5, -5, 0, 0, 0, 0, 1, 0);
+            //gl.LookAt(-5, 5, -5, 0, 0, 8, 0, 1, 0);
+            //gl.LookAt(-5, 5, 20, 0, 0, 15, 0, 1, 0);
+            //gl.LookAt(-5, 5, -5, lookPos.X, lookPos.Y, lookPos.Z, 0, 1, 0);
+            //gl.LookAt(-5, 5, -5, 0.1537764, -1.759739, 7.670001, 0, 1, 0);
+            gl.LookAt(0, 0, 15, lookPos.X, lookPos.Y, lookPos.Z, 0, 1, 0);
+            Console.WriteLine("lookPos : " + lookPos.X + ", " + lookPos.Y + ", " + lookPos.Z + ")");
 
             //  Set the modelview matrix.
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            
+            // Reset The Modelview Matrix 
+            gl.LoadIdentity(); 
         }
 
         /// The current rotation.

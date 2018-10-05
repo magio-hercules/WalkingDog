@@ -46,7 +46,7 @@
             <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
                 <TextBlock Text="FPS" Padding="5" Background="#ccc"/>
                 <StackPanel Orientation="Horizontal">
-                    <Slider Width="430" Minimum="1" Value="10" Maximum="30" Margin="5" x:Name="sliderFPS" 
+                    <Slider Width="430" Minimum="1" Value="3" Maximum="30" Margin="5" x:Name="sliderFPS" 
                                 TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
                     <TextBlock Text="{Binding Value, ElementName=sliderFPS}" VerticalAlignment="Center" />
                 </StackPanel>
@@ -227,7 +227,9 @@
                   x:Name="openGLControl"
                   OpenGLInitialized="OpenGLControl_OpenGLInitialized"  
                   Resized="OpenGLControl_Resized" 
-                  OpenGLDraw="OpenGLControl_OpenGLDraw" />
+                  OpenGLDraw="OpenGLControl_OpenGLDraw" 
+                   />
+            <!--DrawFPS="True"-->
         </Viewbox>
 
         <StatusBar Grid.Row="2" HorizontalAlignment="Stretch" Name="statusBar" VerticalAlignment="Bottom" Background="White" Foreground="{StaticResource MediumGreyBrush}">

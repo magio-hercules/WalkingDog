@@ -181,7 +181,8 @@ namespace walkingdog
         }
 
 
-        public static BitmapSource SliceDepthImageWithRectWithoutPlane(this DepthFrame image, Floor floor, CoordinateMapper coordinateMapper, float planePos, int min = 20, int max = 1000, int left = 0, int top = 0, int right = 512, int bottom = 424)
+        public static BitmapSource SliceDepthImageWithRectWithoutPlane(this DepthFrame image, Floor floor, CoordinateMapper coordinateMapper, float planePos, 
+                                    int min = 20, int max = 1000, int left = 0, int top = 0, int right = 512, int bottom = 424)
         {
             ushort[] _depthData = new ushort[512 * 424];
             image.CopyFrameDataToArray(_depthData);
