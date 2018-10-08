@@ -206,6 +206,14 @@
                         <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Depth_Disable">Disble</Button>
                     </StackPanel>
                 </StackPanel>
+                
+                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                    <TextBlock Text="Skeleton" Padding="5" Background="#ccc"/>
+                    <StackPanel Margin="15 15 15 15" Orientation="Horizontal" >
+                        <Button Width="70" Height="25" Click="Button_Skeleton_Enable">Enable</Button>
+                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Skeleton_Disable">Disble</Button>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
             
             <TextBlock Background="#ccc" Text="Info" Margin="0,0,0,0" Padding="5"/>

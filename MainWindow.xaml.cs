@@ -110,6 +110,7 @@ namespace walkingdog
 
 
         // 3D Skeleton
+        Boolean bShowSkeleton = false;
         int skeletonCount = 0;
         CameraSpacePoint[] skeletonPosition;
         float minX = 100, minY = 100, minZ = 100, maxX = -100, maxY = -100, maxZ = -100;
@@ -220,7 +221,7 @@ namespace walkingdog
             // use the window object as the view model in this simple example
             this.DataContext = this;
 
-            this.skeletonPosition = new CameraSpacePoint[1000];
+            this.skeletonPosition = new CameraSpacePoint[512*424];
             lookPos.X = 0.1537764f;
             lookPos.Y = -1.759739f;
             lookPos.Z = 7.670001f;
@@ -627,53 +628,112 @@ namespace walkingdog
 
                 CameraSpacePoint curPos;
 
-                var valH = skelImage.Height;
-                var valW = skelImage.Width;
-                for (int y = 0; y < valH; y++)
+                if (bShowSkeleton)
                 {
-                    for (int x = 0; x < valW; x++)
+                    var valH = skelImage.Height;
+                    var valW = skelImage.Width;
+                    for (int y = 0; y < valH; y++)
                     {
-                        data = skelImage.Data[y, x, 0];
-                        l = skelImage.Data[y, x > 1 && x < valW ? x - 1 : x, 0];
-                        t = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x, 0];
-                        r = skelImage.Data[y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
-                        b = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x, 0];
-
-                        h = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
-                        i = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
-                        j = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
-                        k = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
-
-                        var a = 0;
-                        if (data != 0)
+                        for (int x = 0; x < valW; x++)
                         {
-                            a = 1;
-                            a += 3;
+                            data = skelImage.Data[y, x, 0];
+                            l = skelImage.Data[y, x > 1 && x < valW ? x - 1 : x, 0];
+                            t = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x, 0];
+                            r = skelImage.Data[y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+                            b = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x, 0];
+
+                            h = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
+                            i = skelImage.Data[y > 1 && y < valH ? y - 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+                            j = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
+                            k = skelImage.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+
+                            var a = 0;
+                            if (data != 0)
+                            {
+                                a = 1;
+                                a += 3;
+                            }
+
+                            if (data != 0 && (l | t | r | b /*|h|i|j|k*/) != 0)
+                            {
+                                curPos = (CameraSpacePoint)depthMappedToCameraPoints.GetValue(y * valW + x);
+                                skeletonPosition[count].X = curPos.X * 10;
+                                skeletonPosition[count].Y = curPos.Y * 10;
+                                skeletonPosition[count].Z = curPos.Z * 10;
+
+                                if (!float.IsInfinity(curPos.X))
+                                {
+                                    if (this.skeletonPosition[count].X < minX) minX = skeletonPosition[count].X;
+                                    if (this.skeletonPosition[count].X > maxX) maxX = skeletonPosition[count].X;
+                                }
+                                if (!float.IsInfinity(curPos.Y))
+                                {
+                                    if (this.skeletonPosition[count].Y < minY) minY = skeletonPosition[count].Y;
+                                    if (this.skeletonPosition[count].Y > maxY) maxY = skeletonPosition[count].Y;
+                                }
+                                if (!float.IsInfinity(curPos.Z))
+                                {
+                                    if (this.skeletonPosition[count].Z < minZ) minZ = skeletonPosition[count].Z;
+                                    if (this.skeletonPosition[count].Z > maxZ) maxZ = skeletonPosition[count].Z;
+                                }
+                                count++;
+                            }
                         }
-
-                        if (data != 0 && (l | t | r | b /*|h|i|j|k*/) != 0)
+                    }
+                } else
+                {
+                    var valH = gray_image.Height;
+                    var valW = gray_image.Width;
+                    for (int y = 0; y < valH; y++)
+                    {
+                        for (int x = 0; x < valW; x++)
                         {
-                            curPos = (CameraSpacePoint)depthMappedToCameraPoints.GetValue(y * valW + x);
-                            skeletonPosition[count].X = curPos.X * 10;
-                            skeletonPosition[count].Y = curPos.Y * 10;
-                            skeletonPosition[count].Z = curPos.Z * 10;
+                            data = gray_image.Data[y, x, 0];
+                            l = gray_image.Data[y, x > 1 && x < valW ? x - 1 : x, 0];
+                            t = gray_image.Data[y > 1 && y < valH ? y - 1 : y, x, 0];
+                            r = gray_image.Data[y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+                            b = gray_image.Data[y > 0 && y < valH - 1 ? y + 1 : y, x, 0];
 
-                            if (!float.IsInfinity(curPos.X)) {
-                                if (this.skeletonPosition[count].X < minX) minX = skeletonPosition[count].X;
-                                if (this.skeletonPosition[count].X > maxX) maxX = skeletonPosition[count].X;
+                            h = gray_image.Data[y > 1 && y < valH ? y - 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
+                            i = gray_image.Data[y > 1 && y < valH ? y - 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+                            j = gray_image.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 1 && x < valW ? x - 1 : x, 0];
+                            k = gray_image.Data[y > 0 && y < valH - 1 ? y + 1 : y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
+
+                            var a = 0;
+                            if (data != 0)
+                            {
+                                a = 1;
+                                a += 3;
                             }
-                            if (!float.IsInfinity(curPos.Y)) {
-                                if (this.skeletonPosition[count].Y < minY) minY = skeletonPosition[count].Y;
-                                if (this.skeletonPosition[count].Y > maxY) maxY = skeletonPosition[count].Y;
+
+                            if (data != 0 && (l | t | r | b /*|h|i|j|k*/) != 0)
+                            {
+                                curPos = (CameraSpacePoint)depthMappedToCameraPoints.GetValue(y * valW + x);
+                                skeletonPosition[count].X = curPos.X * 10;
+                                skeletonPosition[count].Y = curPos.Y * 10;
+                                skeletonPosition[count].Z = curPos.Z * 10;
+
+                                if (!float.IsInfinity(curPos.X))
+                                {
+                                    if (this.skeletonPosition[count].X < minX) minX = skeletonPosition[count].X;
+                                    if (this.skeletonPosition[count].X > maxX) maxX = skeletonPosition[count].X;
+                                }
+                                if (!float.IsInfinity(curPos.Y))
+                                {
+                                    if (this.skeletonPosition[count].Y < minY) minY = skeletonPosition[count].Y;
+                                    if (this.skeletonPosition[count].Y > maxY) maxY = skeletonPosition[count].Y;
+                                }
+                                if (!float.IsInfinity(curPos.Z))
+                                {
+                                    if (this.skeletonPosition[count].Z < minZ) minZ = skeletonPosition[count].Z;
+                                    if (this.skeletonPosition[count].Z > maxZ) maxZ = skeletonPosition[count].Z;
+                                }
+                                count++;
                             }
-                            if (!float.IsInfinity(curPos.Z)) {
-                                if (this.skeletonPosition[count].Z < minZ) minZ = skeletonPosition[count].Z;
-                                if (this.skeletonPosition[count].Z > maxZ) maxZ = skeletonPosition[count].Z;
-                            }
-                            count++;
                         }
                     }
                 }
+                
 
                 // set lookPos
                 //if (skeletonCount == 0)
@@ -1212,6 +1272,17 @@ namespace walkingdog
                 this.depthFrameReader = null;
             }
         }
+
+        private void Button_Skeleton_Enable(object sender, RoutedEventArgs e)
+        {
+            this.bShowSkeleton = true;
+        }
+
+        private void Button_Skeleton_Disable(object sender, RoutedEventArgs e)
+        {
+            this.bShowSkeleton = false;
+        }
+        
 
         // org
         //public static Bitmap Skelatanize(Bitmap image)
