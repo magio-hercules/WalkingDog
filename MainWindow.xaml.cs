@@ -458,12 +458,6 @@ namespace walkingdog
             if (depthFrameProcessed)
             {
                 this.RenderDepthPixels();
-
-                //this.depthBitmap.WritePixels(
-                //   new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
-                //   this.depthPixels,
-                //   this.depthBitmap.PixelWidth,
-                //   0);
             }
 
             int fps = Utility.CalculateFrameRate();
@@ -630,6 +624,13 @@ namespace walkingdog
 
                 if (bShowSkeleton)
                 {
+                    canvas.Children.Clear();
+
+                    // 2D space point
+                    Point point = new Point();
+                    ColorSpacePoint colorPoint;
+                    double ratio = 0.25f;
+
                     var valH = skelImage.Height;
                     var valW = skelImage.Width;
                     for (int y = 0; y < valH; y++)
@@ -661,6 +662,13 @@ namespace walkingdog
                                 skeletonPosition[count].Y = curPos.Y * 10;
                                 skeletonPosition[count].Z = curPos.Z * 10;
 
+                                colorPoint = this.kinectSensor.CoordinateMapper.MapCameraPointToColorSpace(curPos);
+                                if (!float.IsInfinity(curPos.X) && !float.IsInfinity(curPos.Y))
+                                {
+                                    point.X = colorPoint.X;
+                                    point.Y = colorPoint.Y;
+                                }
+
                                 if (!float.IsInfinity(curPos.X))
                                 {
                                     if (this.skeletonPosition[count].X < minX) minX = skeletonPosition[count].X;
@@ -676,6 +684,19 @@ namespace walkingdog
                                     if (this.skeletonPosition[count].Z < minZ) minZ = skeletonPosition[count].Z;
                                     if (this.skeletonPosition[count].Z > maxZ) maxZ = skeletonPosition[count].Z;
                                 }
+
+                                System.Windows.Shapes.Ellipse ellipse = new System.Windows.Shapes.Ellipse
+                                {
+                                    Fill = Brushes.Red,
+                                    Width = 5,
+                                    Height = 5
+                                };
+
+                                // draw Canvas skeleton
+                                Canvas.SetLeft(ellipse, (point.X - ellipse.Width / 2) * ratio);
+                                Canvas.SetTop(ellipse, (point.Y - ellipse.Height / 2) * ratio + 80);
+                                canvas.Children.Add(ellipse);
+
                                 count++;
                             }
                         }
@@ -688,7 +709,7 @@ namespace walkingdog
                     {
                         for (int x = 0; x < valW; x++)
                         {
-                            data = gray_image.Data[y, x, 0];
+                            data = gray_image.Data[y, x, 0]; 
                             l = gray_image.Data[y, x > 1 && x < valW ? x - 1 : x, 0];
                             t = gray_image.Data[y > 1 && y < valH ? y - 1 : y, x, 0];
                             r = gray_image.Data[y, x > 0 && x < valW - 1 ? x + 1 : x, 0];
@@ -732,8 +753,7 @@ namespace walkingdog
                             }
                         }
                     }
-                }
-                
+                }                
 
                 // set lookPos
                 //if (skeletonCount == 0)
@@ -996,23 +1016,11 @@ namespace walkingdog
         /// </summary>
         private void RenderDepthPixels()
         {
-            this.depthBitmap.WritePixels(
-                new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
-                this.depthPixels,
-                this.depthBitmap.PixelWidth,
-                0);
-
-            ////BitmapSource bs = (BitmapSource)depthFrame.ToBitmap();
-            ////Image<Bgr, Byte> depthImageCanny = new Image<Bgr, byte>(bs.ToBitmap());
-
-            //////CvInvoke.cvCanny(depthImageCanny, depthImageCanny, 50, 150, 3);
-
-            ////this.Image_Depth.Source = ImageHelpers.ToBitmapSource(depthBitmap.ToBitmap());
-
-            //System.Drawing.Bitmap bitmap = depthBitmap.ToBitmap();
-            //BitmapSource bitmapSrc = BitmapSource.Create(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96, 96, PixelFormats.Bgr32, null, this.depthPixels_bin, this.depthBitmap.PixelWidth * 4);
-            ////this.Image_Depth.Source = ImageSourceForBitmap(bitmap);
-            //this.Image_Depth.Source = bitmapSrc;
+            //this.depthBitmap.WritePixels(
+            //    new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
+            //    this.depthPixels,
+            //    this.depthBitmap.PixelWidth,
+            //    0);
         }
 
         //If you get 'dllimport unknown'-, then add 'using System.Runtime.InteropServices;'
@@ -1067,10 +1075,11 @@ namespace walkingdog
             {
                 if (frame != null)
                 {
-                    if (_mode == Mode.Color)
-                    {
-                        camera.Source = frame.ToBitmap();
-                    }
+                    camera.Source = frame.ToBitmap();
+                    //if (_mode == Mode.Color)
+                    //{
+                    //    camera.Source = frame.ToBitmap();
+                    //}
                 }
             }
 
@@ -1089,11 +1098,11 @@ namespace walkingdog
                 {
                     if (_mode == Mode.Depth)
                     {
-                        camera.Source = frame.ToBitmap();
+                        //camera.Source = frame.ToBitmap();
+                        Image_Depth.Source = frame.ToBitmap();
 
                         Tongull_DetectBlobs(frame);
                         //Tongull_DetectBlobs_test(frame);
-
 
                         using (Microsoft.Kinect.KinectBuffer depthBuffer = frame.LockImageBuffer())
                         {
