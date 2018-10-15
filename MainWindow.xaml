@@ -11,237 +11,241 @@
     <Window.Resources>
         <SolidColorBrush x:Key="MediumGreyBrush" Color="#ff6e6e6e" />
     </Window.Resources>
-    <Grid HorizontalAlignment="Left" Width="1920">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="424" />
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <DockPanel>
+        <Grid HorizontalAlignment="Left" Width="1920">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="424" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="512"></ColumnDefinition>
-            <ColumnDefinition Width="480"></ColumnDefinition>
-            <ColumnDefinition Width="480"></ColumnDefinition>
-            <ColumnDefinition Width="480"></ColumnDefinition>
-        </Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="480"></ColumnDefinition>
+                <ColumnDefinition Width="480"></ColumnDefinition>
+                <ColumnDefinition Width="480"></ColumnDefinition>
+                <ColumnDefinition Width="480"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            
+            <Image Grid.Row="0" Grid.Column="0" Name="camera" Width="480" Height="424" />
+            <Canvas Grid.Row="0" Grid.Column="0" Name="canvas" Width="480" Height="424" />
 
-        <Image Grid.Row="1" Grid.Column="0" Name="camera" Width="480" Height="424" />
-        <Canvas Grid.Row="1" Grid.Column="0" Name="canvas" Width="480" Height="424" />
-
-        <Viewbox Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left">
-            <Image Name="Image_Depth" Width="512" Height="424"  Source="{Binding ImageSourceDepth}" Stretch="UniformToFill" />
-        </Viewbox>
-        <Viewbox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left">
-            <Image Name="Image_Source" Width="480" Height="424" Source="{Binding ImageSource}" Stretch="UniformToFill" />
-        </Viewbox>
-        <Viewbox Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left">
-            <Image Name="Image_1" Width="480" Height="424"  Source="{Binding ImageSource1}" Stretch="UniformToFill" />
-        </Viewbox>
-        <Viewbox Grid.Row="0" Grid.Column="3" HorizontalAlignment="left" >
-            <Image Name="Image_2" Width="480" Height="424"  Source="{Binding ImageSource2}" Stretch="UniformToFill" />
-        </Viewbox>
-
-        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0" Width="480" Height="424" 
+            <Viewbox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left">
+                <Image Name="Image_Depth" Width="512" Height="424"  Source="{Binding ImageSourceDepth}" Stretch="UniformToFill" />
+            </Viewbox>
+            
+            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0" Width="480" Height="424" 
                     Background="#f0f0f0" Orientation="Vertical" HorizontalAlignment="Left">
-            <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                <TextBlock Text="FPS" Padding="5" Background="#ccc"/>
-                <StackPanel Orientation="Horizontal">
-                    <Slider Width="430" Minimum="1" Value="3" Maximum="30" Margin="5" x:Name="sliderFPS" 
+                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                    <TextBlock Text="FPS" Padding="5" Background="#ccc"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Slider Width="430" Minimum="1" Value="5" Maximum="30" Margin="5" x:Name="sliderFPS" 
                                 TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
-                    <TextBlock Text="{Binding Value, ElementName=sliderFPS}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Value, ElementName=sliderFPS}" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
 
-            <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                <TextBlock Text="Screen Clipping" Padding="5" Background="#ccc"/>
-                <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
-                        <TextBlock Text="Left" Padding="5"/>
-                        <StackPanel  Orientation="Horizontal" >
-                            <Slider Width="150"  Minimum="0" Value="120"  Maximum="512" Margin="15 5 5 5"  
+                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                    <TextBlock Text="Screen Clipping" Padding="5" Background="#ccc"/>
+                    <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
+                            <TextBlock Text="Left" Padding="5"/>
+                            <StackPanel  Orientation="Horizontal" >
+                                <Slider Width="150"  Minimum="0" Value="120"  Maximum="512" Margin="15 5 5 5"  
                                     TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
                                     x:Name="positionLeft" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=positionLeft}" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <TextBlock Text="Top" Padding="10 5 5 5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="160" Minimum="0" Value="190" Maximum="512" Margin="23 5 5 5" 
+                                <TextBlock Text="{Binding Value, ElementName=positionLeft}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Top" Padding="10 5 5 5"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="160" Minimum="0" Value="190" Maximum="512" Margin="23 5 5 5" 
                                     TickFrequency="1" IsSnapToTickEnabled="True" Interval="1"
                                     x:Name="positionTop" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=positionTop}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Value, ElementName=positionTop}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
+                            <TextBlock Text="Right" Padding="5"/>
+                            <StackPanel  Orientation="Horizontal" >
+                                <Slider Width="150"  Minimum="0" Value="400"  Maximum="512" Margin="5"  
+                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
+                                    x:Name="positionRight" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=positionRight}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Bottom" Padding="10 5 5 5"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="160" Minimum="0" Value="390" Maximum="424" Margin="5" 
+                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
+                                    x:Name="positionBottom" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=positionBottom}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+
+                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                    <TextBlock Text="Plane Position" Padding="5" Background="#ccc"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Slider Width="430" Minimum="-0.5" Value="-0.29" Maximum="0.2" Margin="5" x:Name="sliderPlanePos" 
+                                TickFrequency="0.01" IsSnapToTickEnabled="True" Interval="1" />
+                        <TextBlock Text="{Binding Value, ElementName=sliderPlanePos}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Text="Settings"  Padding="5" Background="#ccc" />
+
+                <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
+
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
+                        <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
+                            <TextBlock Text="Min Distance" Padding="5 0 0 0"/>
+                            <StackPanel  Orientation="Horizontal" >
+                                <Slider Width="200"  Minimum="300" Value="500"  Maximum="1000" Margin="5"  x:Name="sliderMin" Padding="5"
+                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
+                                <TextBlock Text="{Binding Value, ElementName=sliderMin}" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <TextBlock Text="Max Distance" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="500" Value="900" Maximum="2000" Margin="5" x:Name="sliderMax" Padding="5"
+                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
+                                <TextBlock Text="{Binding Value, ElementName=sliderMax}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Vertical" Margin="10,0,0,0"   >
+                            <TextBlock Text="Min Blob Size" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="1" Value="40" Maximum="70" Margin="5" x:Name="sliderMinSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=sliderMinSize}" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <TextBlock Text="Max Blob Size" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="40" Value="240" Maximum="500" Margin="5" x:Name="sliderMaxSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=sliderMaxSize}" VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
-                        <TextBlock Text="Right" Padding="5"/>
-                        <StackPanel  Orientation="Horizontal" >
-                            <Slider Width="150"  Minimum="0" Value="400"  Maximum="512" Margin="5"  
-                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
-                                    x:Name="positionRight" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=positionRight}" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
+                            <TextBlock Text="Image Threshold Min" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="1" Value="60" Maximum="255" Margin="5" x:Name="imageThreshMin"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=imageThreshMin}" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <TextBlock Text="Image Threshold Max" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="1" Value="255" Maximum="255" Margin="5" x:Name="imageThreshMax"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=imageThreshMax}" VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
-                        <TextBlock Text="Bottom" Padding="10 5 5 5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="160" Minimum="0" Value="390" Maximum="424" Margin="5" 
-                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" 
-                                    x:Name="positionBottom" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=positionBottom}" VerticalAlignment="Center" />
+
+                        <StackPanel Orientation="Vertical" Margin="10,0,0,0"   >
+                            <TextBlock Text="Canny Threshold Min" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="1" Value="50" Maximum="255" Margin="5" x:Name="cannyThreshMin"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=cannyThreshMin}" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <TextBlock Text="Canny Threshold Max" Padding="5 0 0 0"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="200" Minimum="1" Value="200" Maximum="255" Margin="5" x:Name="cannyThreshMax"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
+                                <TextBlock Text="{Binding Value, ElementName=cannyThreshMax}" VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
+
                 </StackPanel>
             </StackPanel>
-            
-            
-            <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                <TextBlock Text="Plane Position" Padding="5" Background="#ccc"/>
-                <StackPanel Orientation="Horizontal">
-                    <Slider Width="430" Minimum="-0.5" Value="-0.29" Maximum="0.2" Margin="5" x:Name="sliderPlanePos" 
-                                TickFrequency="0.01" IsSnapToTickEnabled="True" Interval="1" />
-                    <TextBlock Text="{Binding Value, ElementName=sliderPlanePos}" VerticalAlignment="Center" />
-                </StackPanel>
-            </StackPanel>
 
-            <TextBlock Text="Settings"  Padding="5" Background="#ccc" />
-
-            <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
-
-
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
-                    <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
-                        <TextBlock Text="Min Distance" Padding="5"/>
-                        <StackPanel  Orientation="Horizontal" >
-                            <Slider Width="200"  Minimum="300" Value="500"  Maximum="1000" Margin="5"  x:Name="sliderMin" Padding="5"
-                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
-                            <TextBlock Text="{Binding Value, ElementName=sliderMin}" VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <TextBlock Text="Max Distance" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="500" Value="900" Maximum="2000" Margin="5" x:Name="sliderMax" Padding="5"
-                                    TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" />
-                            <TextBlock Text="{Binding Value, ElementName=sliderMax}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Vertical" Margin="20,0,0,0"   >
-                        <TextBlock Text="Min Blob Size" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="40" Maximum="70" Margin="5" x:Name="sliderMinSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=sliderMinSize}" VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <TextBlock Text="Max Blob Size" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="40" Value="240" Maximum="500" Margin="5" x:Name="sliderMaxSize"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=sliderMaxSize}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,0"   >
-                    <StackPanel Orientation="Vertical" Margin="0,0,0,0"   >
-                        <TextBlock Text="Image Threshold Min" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="60" Maximum="255" Margin="5" x:Name="imageThreshMin"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=imageThreshMin}" VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <TextBlock Text="Image Threshold Max" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="255" Maximum="255" Margin="5" x:Name="imageThreshMax"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=imageThreshMax}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Vertical" Margin="20,0,0,0"   >
-                        <TextBlock Text="Canny Threshold Min" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="50" Maximum="255" Margin="5" x:Name="cannyThreshMin"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=cannyThreshMin}" VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <TextBlock Text="Canny Threshold Max" Padding="5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="200" Minimum="1" Value="200" Maximum="255" Margin="5" x:Name="cannyThreshMax"  TickFrequency="1" IsSnapToTickEnabled="True" Interval="1" Padding="5"/>
-                            <TextBlock Text="{Binding Value, ElementName=cannyThreshMax}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-
-            </StackPanel>
-        </StackPanel>
-
-        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0" Width="480" Height="424" 
+            <StackPanel Grid.Row="0" Grid.Column="3" Margin="0" Width="480" Height="424" 
                     Background="#f0f0f0" Orientation="Vertical" HorizontalAlignment="Left">
-            <StackPanel Margin="0" Orientation="Vertical" >
-                <StackPanel Orientation="Vertical" >
-                    <TextBlock Text="Frame" Padding="5" Background="#ccc" >
-                        <TextBlock.RenderTransform>
-                            <TransformGroup>
-                                <ScaleTransform/>
-                                <SkewTransform/>
-                                <RotateTransform Angle="0.362"/>
-                                <TranslateTransform/>
-                            </TransformGroup>
-                        </TextBlock.RenderTransform>
-                    </TextBlock>
-                    <StackPanel Margin="15 15 15 15" Orientation="Horizontal" >
-                        <Button Width="70" Height="25" Click="Button_Frame_Color">Color</Button>
-                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Frame_Depth">Depth</Button>
-                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Frame_Infrared">Infrared</Button>
-                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Body">Body</Button>
+                <StackPanel Margin="0" Orientation="Vertical" >
+                    <StackPanel Orientation="Vertical" >
+                        <TextBlock Text="Frame" Padding="5" Background="#ccc" >
+                            <TextBlock.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="0.362"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <StackPanel Margin="10" Orientation="Horizontal" >
+                            <Button Width="70" Height="25" Click="Button_Frame_Color">Color</Button>
+                            <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Frame_Depth">Depth</Button>
+                            <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Frame_Infrared">Infrared</Button>
+                            <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Body">Body</Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!--<StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                        <TextBlock Text="Color Frame" Padding="5" Background="#ccc"/>
+                        <StackPanel Margin="10" Orientation="Horizontal" >
+                            <Button Width="70" Height="25" Click="Button_Color_Enable">Enable</Button>
+                            <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Color_Disable">Disble</Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                        <TextBlock Text="Depth Frame" Padding="5" Background="#ccc"/>
+                        <StackPanel Margin="10" Orientation="Horizontal" >
+                            <Button Width="70" Height="25" Click="Button_Depth_Enable">Enable</Button>
+                            <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Depth_Disable">Disble</Button>
+                        </StackPanel>
+                    </StackPanel>-->
+
+                    <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
+                        <TextBlock Text="Skeleton" Padding="5" Background="#ccc"/>
+                        <StackPanel Margin="10" Orientation="Horizontal" >
+                            <Button Width="70" Height="25" Click="Button_Skeleton_Enable">Enable</Button>
+                            <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Skeleton_Disable">Disble</Button>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                    <TextBlock Text="Color Frame" Padding="5" Background="#ccc"/>
-                    <StackPanel Margin="15 15 15 15" Orientation="Horizontal" >
-                        <Button Width="70" Height="25" Click="Button_Color_Enable">Enable</Button>
-                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Color_Disable">Disble</Button>
-                    </StackPanel>
+                <TextBlock Background="#ccc" Text="Info" Margin="0,0,0,0" Padding="5"/>
+                <StackPanel Orientation="Horizontal" Margin="5">
+                    <TextBlock Text="Blobs Detected" />
+                    <TextBlock TextWrapping="Wrap" x:Name="txtBlobCount" Text="0" Margin="10 0 0 0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="5">
+                    <TextBlock Text="FPS" />
+                    <TextBlock TextWrapping="Wrap" x:Name="txtFPS" Text="0" Margin="74 0 0 0" />
                 </StackPanel>
 
-                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                    <TextBlock Text="Depth Frame" Padding="5" Background="#ccc"/>
-                    <StackPanel Margin="15 15 15 15" Orientation="Horizontal" >
-                        <Button Width="70" Height="25" Click="Button_Depth_Enable">Enable</Button>
-                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Depth_Disable">Disble</Button>
-                    </StackPanel>
-                </StackPanel>
-                
-                <StackPanel Orientation="Vertical" Margin="0 0 0 0"  >
-                    <TextBlock Text="Skeleton" Padding="5" Background="#ccc"/>
-                    <StackPanel Margin="15 15 15 15" Orientation="Horizontal" >
-                        <Button Width="70" Height="25" Click="Button_Skeleton_Enable">Enable</Button>
-                        <Button Width="70" Height="25" Margin="15 0 0 0" Click="Button_Skeleton_Disable">Disble</Button>
-                    </StackPanel>
-                </StackPanel>
+                <TextBlock TextWrapping="Wrap" x:Name="txtInfo" Text="Info" Margin="5"/>
+
             </StackPanel>
-            
-            <TextBlock Background="#ccc" Text="Info" Margin="0,0,0,0" Padding="5"/>
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <TextBlock Text="Blobs Detected" />
-                <TextBlock TextWrapping="Wrap" x:Name="txtBlobCount" Text="0" Margin="10 0 0 0" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <TextBlock Text="FPS" />
-                <TextBlock TextWrapping="Wrap" x:Name="txtFPS" Text="0" Margin="74 0 0 0" />
-            </StackPanel>
 
-            <TextBlock TextWrapping="Wrap" x:Name="txtInfo" Text="Info" Margin="5"/>
+            <Viewbox Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left">
+                <Image Name="Image_Source" Width="480" Height="424" Source="{Binding ImageSource}" Stretch="UniformToFill" />
+            </Viewbox>
+            <Viewbox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left">
+                <Image Name="Image_1" Width="480" Height="424"  Source="{Binding ImageSource1}" Stretch="UniformToFill" />
+            </Viewbox>
+            <Viewbox Grid.Row="1" Grid.Column="2" HorizontalAlignment="left" >
+                <Image Name="Image_2" Width="480" Height="424"  Source="{Binding ImageSource2}" Stretch="UniformToFill" />
+            </Viewbox>
 
-        </StackPanel>
-
-        <Viewbox Grid.Row="1" Grid.Column="3" Height="424" Width="480" HorizontalAlignment="Right">
-            <WPF:OpenGLControl Height="424" Width="480" 
+            <Viewbox Grid.Row="1" Grid.Column="3" Height="424" Width="480" HorizontalAlignment="Right">
+                <WPF:OpenGLControl Height="424" Width="480" 
                   x:Name="openGLControl"
                   OpenGLInitialized="OpenGLControl_OpenGLInitialized"  
                   Resized="OpenGLControl_Resized" 
                   OpenGLDraw="OpenGLControl_OpenGLDraw" 
                    />
-            <!--DrawFPS="True"-->
-        </Viewbox>
+                <!--DrawFPS="True"-->
+            </Viewbox>
 
-        <StatusBar Grid.Row="2" HorizontalAlignment="Stretch" Name="statusBar" VerticalAlignment="Bottom" Background="White" Foreground="{StaticResource MediumGreyBrush}">
-            <StatusBarItem Content="{Binding StatusText}" />
-        </StatusBar>
-    </Grid>
+            <StatusBar Grid.Row="2" HorizontalAlignment="Stretch" Name="statusBar" VerticalAlignment="Bottom" Background="White" Foreground="{StaticResource MediumGreyBrush}">
+                <StatusBarItem Content="{Binding StatusText}" />
+            </StatusBar>
+        </Grid>
+    </DockPanel>
+   
 </Window>

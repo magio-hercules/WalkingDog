@@ -123,7 +123,7 @@ namespace walkingdog
         // MultiFrame
         Boolean bMultiFrame = true;
 
-        Mode _mode = Mode.Color;
+        Mode _mode = Mode.Depth;
 
         //KinectSensor _sensor;
         MultiSourceFrameReader _multiSourceFrameReader;
